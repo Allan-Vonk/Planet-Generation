@@ -1,0 +1,15 @@
+﻿#pragma kernel CSMain
+
+struct meshData
+{
+    float position[];
+    int triangles[];
+};
+
+float PositionData[];
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    
+}
