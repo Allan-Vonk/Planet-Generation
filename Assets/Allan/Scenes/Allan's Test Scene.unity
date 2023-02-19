@@ -236,9 +236,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7516546c4c78967438ce9225cd596a8e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ChunkPrefab: {fileID: 8792366589243833634, guid: f97862fb1ec649c4fb1f25b2bdd9d8ec, type: 3}
-  size: {x: 1, y: 1, z: 1}
-  chunks: []
 --- !u!4 &296138470
 Transform:
   m_ObjectHideFlags: 0
@@ -265,15 +262,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f72ba6912c974047a327016791d2960, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CornerTable:
-  - {x: 0, y: 0, z: 0}
-  - {x: 1, y: 0, z: 0}
-  - {x: 1, y: 1, z: 0}
-  - {x: 0, y: 1, z: 0}
-  - {x: 0, y: 0, z: 1}
-  - {x: 1, y: 0, z: 1}
-  - {x: 1, y: 1, z: 1}
-  - {x: 0, y: 1, z: 1}
 --- !u!1 &328233074
 GameObject:
   m_ObjectHideFlags: 0
@@ -459,7 +447,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 425404039}
   m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 6769, z: 0}
+  m_LocalPosition: {x: 0, y: 3200, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1350624173}
@@ -980,7 +968,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1639349332}
   - component: {fileID: 1639349331}
-  - component: {fileID: 1639349333}
   m_Layer: 0
   m_Name: Planet
   m_TagString: Planet
@@ -1008,6 +995,17 @@ MonoBehaviour:
   CentreOfPlanet: {x: 0, y: 0, z: 0}
   AmountOfPointsPerAxis: 20
   material: {fileID: 2100000, guid: ae606aa015035014a92f24af0bb9a693, type: 2}
+  Context:
+    AmountOfPointsPerAxis: 20
+    SurfaceLevel: 0.4
+    CentreOfPlanet: {x: 0, y: 0, z: 0}
+    MaxLod: 10
+    NoiseLayerSettings:
+      Layers:
+      - NoiseScale: 0.001
+        Amplitude: 0.1
+      - NoiseScale: 0.0017
+        Amplitude: 0.05
 --- !u!4 &1639349332
 Transform:
   m_ObjectHideFlags: 0
@@ -1022,27 +1020,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1639349333
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1639349330}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f72ba6912c974047a327016791d2960, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  CornerTable:
-  - {x: 0, y: 0, z: 0}
-  - {x: 1, y: 0, z: 0}
-  - {x: 1, y: 1, z: 0}
-  - {x: 0, y: 1, z: 0}
-  - {x: 0, y: 0, z: 1}
-  - {x: 1, y: 0, z: 1}
-  - {x: 1, y: 1, z: 1}
-  - {x: 0, y: 1, z: 1}
 --- !u!1 &1949060863
 GameObject:
   m_ObjectHideFlags: 0

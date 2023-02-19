@@ -46,16 +46,22 @@ public class MarchingChunk
     public float EvaluatePoint(Vector3 point, int layers, float scale, float roughness)
     {
         float noiseValue = 0;
-        float frequency = MarchingContext.NoiseScale;
-        float amplitude = MarchingContext.Amplitude;
+        //float frequency = MarchingContext.NoiseLayerSettings.NoiseScale;
+        //float amplitude = MarchingContext.NoiseLayerSettings.Amplitude;
 
-        for (int i = 0; i < layers; i++)
+        for (int i = 0; i < MarchingContext.NoiseLayerSettings.Layers.Length; i++)
         {
-            float v = Get3DPerlinValue(point * frequency + new Vector3(1000,1000,1000));
-            noiseValue += v * amplitude;
-            frequency *= roughness;
-            amplitude *= .5f;
+            float v = Get3DPerlinValue(point * MarchingContext.NoiseLayerSettings.Layers[i].NoiseScale + new Vector3(1000, 1000, 1000));
+            noiseValue += v * MarchingContext.NoiseLayerSettings.Layers[i].Amplitude;
         }
+
+        //for (int i = 0; i < layers; i++)
+        //{
+        //    float v = Get3DPerlinValue(point * frequency + new Vector3(1000,1000,1000));
+        //    noiseValue += v * amplitude;
+        //    frequency *= roughness;
+        //    amplitude *= .5f;
+        //}
         return noiseValue * scale;
     }
     //clear mesh and generate new mesh data

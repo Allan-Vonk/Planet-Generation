@@ -18,7 +18,7 @@ public class QuadTreeStarter : MonoBehaviour
     public int AmountOfPointsPerAxis = 20;
     public Material material;
 
-    MarchingCubeContext Context;
+    [SerializeField] MarchingCubeContext Context;
 
     private QuadTree qt;
     private void Start ()
@@ -28,16 +28,7 @@ public class QuadTreeStarter : MonoBehaviour
     }
     private void Initiate ()
     {
-        CentreOfPlanet = transform.position;
-        Context = new MarchingCubeContext
-        {
-            AmountOfPointsPerAxis = AmountOfPointsPerAxis,
-            SurfaceLevel = surfaceLevel,
-            CentreOfPlanet = CentreOfPlanet,
-            MaxLod = maxLod,
-            Amplitude = Amplitude,
-            NoiseScale = NoiseScale
-        };
+        Context.CentreOfPlanet = transform.position;
 
         qt = new QuadTree(new Cube(CentreOfPlanet, new Vector3Int(10000, 10000, 10000)), this, material, startLod, Context);
 
@@ -78,20 +69,21 @@ public class QuadTreeStarter : MonoBehaviour
                 quadTree.CalledUpdate();
             }
         }
-        MarchingCubeContext PContext = new MarchingCubeContext
-        {
-            AmountOfPointsPerAxis = AmountOfPointsPerAxis,
-            SurfaceLevel = surfaceLevel,
-            CentreOfPlanet = CentreOfPlanet,
-            MaxLod = maxLod,
-            Amplitude = Amplitude,
-            NoiseScale = NoiseScale
-        };
-        if (Context.Amplitude != PContext.Amplitude || Context.NoiseScale != PContext.NoiseScale || Context.SurfaceLevel != PContext.SurfaceLevel)
-        {
-            Context = PContext;
-            Initiate();
-        }
+        //MarchingCubeContext PContext = new MarchingCubeContext
+        //{
+        //    AmountOfPointsPerAxis = AmountOfPointsPerAxis,
+        //    SurfaceLevel = surfaceLevel,
+        //    CentreOfPlanet = CentreOfPlanet,
+        //    MaxLod = maxLod,
+            
+        //    Amplitude = Amplitude,
+        //    NoiseScale = NoiseScale
+        //};
+        //if (Context.Amplitude != PContext.Amplitude || Context.NoiseScale != PContext.NoiseScale || Context.SurfaceLevel != PContext.SurfaceLevel)
+        //{
+        //    Context = PContext;
+        //    Initiate();
+        //}
     }
     public Vector3 GetWorldPosition ()
     {

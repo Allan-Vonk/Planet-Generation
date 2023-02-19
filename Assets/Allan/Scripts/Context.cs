@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Text;
 using System.Threading.Tasks;
 
+[Serializable]
 public struct MarchingCubeContext
 {
     public Cube Cube;
@@ -12,6 +13,17 @@ public struct MarchingCubeContext
     public float SurfaceLevel;
     public Vector3 CentreOfPlanet;
     public int MaxLod;
+    public NoiseLayerSettings NoiseLayerSettings;
+
+}
+[Serializable]
+public struct NoiseLayerSettings
+{
+    public NoiseLayer[] Layers;
+}
+[Serializable]
+public struct NoiseLayer 
+{
     public float NoiseScale;
     public float Amplitude;
 }
