@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Point
+public struct Point
 {
     public Vector3 position;
-    public bool state = false;
+    public int state;
     public float value;
 }

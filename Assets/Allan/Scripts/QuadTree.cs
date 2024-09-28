@@ -84,12 +84,15 @@ public class QuadTree
             return;
         }
         //Starting a asynchronous task to generate mesh data
-        var result = await Task.Run(()=>
-        {
-            return new MarchingChunk(MarchingContext,Boundary);
-        });
+        //var result = await Task.Run(()=>
+        //{
+        //    return new MarchingChunk(MarchingContext,Boundary);
+        //});
         //Making mesh here instead of in the MarchingChunk for easier acces and because its not possible to create a new mesh on another threat
-        marchingChunk = result;
+        marchingChunk = new MarchingChunk(MarchingContext, Boundary);
+        marchingChunk.GeneratePositionData();
+        await Task.Run(() => marchingChunk.GenerateMeshData());
+
         if (mesh)
         {
             mesh.vertices = marchingChunk.m_vertices.ToArray();

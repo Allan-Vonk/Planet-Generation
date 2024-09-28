@@ -14,6 +14,7 @@ public struct MarchingCubeContext
     public Vector3 CentreOfPlanet;
     public int MaxLod;
     public NoiseLayerSettings NoiseLayerSettings;
+    public ComputeShader computeShader;
 
 }
 [Serializable]

@@ -1,15 +1,40 @@
-﻿#pragma kernel CSMain
-
-struct meshData
+﻿// Define a struct to match the C# struct
+struct PositionBufferData
 {
-    float position[];
-    int triangles[];
+    float3 CornerPosition;
+    float3 SpaceBetweenPoints;
+    float3 PlanetCenterPosition;
+    int AmountOfPointsPerAxis;
+};
+struct Point
+{
+    float3 position;
+    bool state;
+    float value;
 };
 
-float PositionData[];
+// StructuredBuffer for positionBufferData
+StructuredBuffer<PositionBufferData> PositionBuffer;
 
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+// RWStructuredBuffer for writing the results (the 3D float array)
+RWStructuredBuffer<Point> ResultBuffer;
+#pragma kernel CSMain
+
+
+[numthreads(1, 1, 1)] // Thread group size (adjust as necessary)
+void CSMain(uint3 id : SV_DispatchThreadID)
 {
+    // Access the struct data from the buffer (in this case, using the first element)
+    PositionBufferData data = PositionBuffer[0];
     
+    // Calculate the flattened index for the 3D array
+    uint index = id.x + (id.y * data.AmountOfPointsPerAxis) + (id.z * data.AmountOfPointsPerAxis * data.AmountOfPointsPerAxis);
+
+    // Example: Use the data from the struct to calculate a value
+    float3 position = data.CornerPosition + float3(id.x * data.SpaceBetweenPoints.x, id.y * data.SpaceBetweenPoints.y, id.z * data.SpaceBetweenPoints.z);
+
+    float distanceToPlanetCenter = distance(position, data.PlanetCenterPosition);
+
+    ResultBuffer[index].position = position;
+    ResultBuffer[index].value = distanceToPlanetCenter;
 }

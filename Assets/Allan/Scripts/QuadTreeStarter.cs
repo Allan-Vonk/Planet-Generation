@@ -103,11 +103,10 @@ public class QuadTreeStarter : MonoBehaviour
         }
         foreach (Point point in marchingCubePoints)
         {
-            if (point != null)
-            {
-                Gizmos.color = (point.value > surfaceLevel) ? Color.green : Color.red;
-                Gizmos.DrawWireSphere(point.position, 10f);
-            }
+
+            Gizmos.color = (point.value > surfaceLevel) ? Color.green : Color.red;
+            Gizmos.DrawWireSphere(point.position, 10f);
+            
         }
     }
 }
