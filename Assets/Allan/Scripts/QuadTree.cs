@@ -19,6 +19,7 @@ public class QuadTree
     private Mesh mesh = new Mesh();
     private Material material;
     private bool ColliderState = true;
+    
     private int lod;
 
     public QuadTree (Cube Boundary, QuadTreeStarter Root, Material material, int lod, MarchingCubeContext Context)
@@ -101,8 +102,7 @@ public class QuadTree
         }
         mesh.RecalculateNormals();
         marchingChunk.mesh = mesh;
-
-        GenerateCollider();
+        if (Application.isPlaying) GenerateCollider();
     }
     //Undivide the Quadtree
     public void GenerateCollider ()

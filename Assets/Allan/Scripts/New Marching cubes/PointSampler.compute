@@ -1,0 +1,80 @@
+﻿// Define a struct to match the C# struct
+struct PositionBufferData
+{
+    float3 CornerPosition;
+    float3 SpaceBetweenPoints;
+    float3 PlanetCenterPosition;
+    float NoiseScale;
+    float NoiseAmplitude;
+    int AmountOfPointsPerAxis;
+};
+struct Point
+{
+    float3 position;
+    bool state;
+    float value;
+};
+
+// StructuredBuffer for positionBufferData
+StructuredBuffer<PositionBufferData> PositionBuffer;
+
+// RWStructuredBuffer for writing the results (the 3D float array)
+RWStructuredBuffer<Point> ResultBuffer;
+#pragma kernel CSMain
+// 2D Perlin noise approximation based on gradients
+float hash(float2 p)
+{
+    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+float noise2D(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+
+    float a = hash(i);
+    float b = hash(i + float2(1.0, 0.0));
+    float c = hash(i + float2(0.0, 1.0));
+    float d = hash(i + float2(1.0, 1.0));
+
+    float2 u = f * f * (3.0 - 2.0 * f);
+
+    return lerp(a, b, u.x) +
+           (c - a) * u.y * (1.0 - u.x) +
+           (d - b) * u.x * u.y;
+}
+// Main 3D Perlin Noise function that averages 2D noise
+float Get3DPerlinValue(float3 position)
+{
+    // Compute 2D Perlin noise for each combination of x, y, z
+    float AB = noise2D(position.xy);
+    float BC = noise2D(position.yz);
+    float AC = noise2D(position.xz);
+    float BA = noise2D(float2(position.y, position.x));
+    float CB = noise2D(float2(position.z, position.y));
+    float CA = noise2D(float2(position.z, position.x));
+
+    // Sum and average the results from the noise values
+    float ABC = (AB + BC + AC + BA + CB + CA) / 6.0;
+
+    return ABC;
+}
+
+[numthreads(1,1,1)] // Thread group size (adjust as necessary)
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    // Access the struct data from the buffer (in this case, using the first element)
+    PositionBufferData data = PositionBuffer[0];
+    
+    // Calculate the flattened index for the 3D array
+    uint index = id.x + (id.y * data.AmountOfPointsPerAxis) + (id.z * data.AmountOfPointsPerAxis * data.AmountOfPointsPerAxis);
+
+    // Example: Use the data from the struct to calculate a value
+    float3 position = data.CornerPosition + float3(id.x * data.SpaceBetweenPoints.x, id.y * data.SpaceBetweenPoints.y, id.z * data.SpaceBetweenPoints.z);
+
+    float distanceToPlanetCenter = distance(position, data.PlanetCenterPosition);
+
+    ResultBuffer[index].position = position;
+    ResultBuffer[index].value = distanceToPlanetCenter + (Get3DPerlinValue(position*data.NoiseScale)*data.NoiseAmplitude);
+}
+
+

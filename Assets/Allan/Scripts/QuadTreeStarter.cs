@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+[ExecuteInEditMode]
 public class QuadTreeStarter : MonoBehaviour
 {
     public List<Cube>Boundaries = new List<Cube>();
@@ -18,6 +18,7 @@ public class QuadTreeStarter : MonoBehaviour
     public int AmountOfPointsPerAxis = 20;
     public Material material;
 
+    public bool reset = false;
     [SerializeField] MarchingCubeContext Context;
 
     private QuadTree qt;
@@ -25,6 +26,10 @@ public class QuadTreeStarter : MonoBehaviour
     {
         Application.targetFrameRate = 60;
         Initiate();
+    }
+    private void OnValidate()
+    {
+        Start();
     }
     private void Initiate ()
     {
@@ -55,11 +60,16 @@ public class QuadTreeStarter : MonoBehaviour
     IEnumerator KillGameObject (GameObject gameObject)
     {
         yield return new WaitForSeconds(0);
-        Object.Destroy(gameObject);
+        Object.DestroyImmediate(gameObject);
         yield return null;
     }
     private void Update ()
     {
+        if (reset)
+        {
+            Start();
+            reset = false;
+        }
         Leaves = qt.GetLeaves();
         BranchesAndLeaves = qt.GetBranchesAndLeaves();
         foreach (QuadTree quadTree in BranchesAndLeaves)

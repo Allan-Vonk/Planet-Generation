@@ -31,13 +31,23 @@ public class MarchingChunk
         public Vector3 CornerPosition;
         public Vector3 SpaceBetweenPoints;
         public Vector3 CenterOfPlanet;
+        public float NoiseScale;
+        public float NoiseAmplitude;
         public int AmountOfPointsPerAxis;
     }
     public void GeneratePositionData ()
     {
         CornerPosition = (MarchingContext.Cube.position - new Vector3(MarchingContext.Cube.size.x / 2, MarchingContext.Cube.size.y / 2, MarchingContext.Cube.size.z / 2));
         Vector3 spaceBetweenPoints = MarchingContext.Cube.size / (MarchingContext.AmountOfPointsPerAxis-1);
-        positionBufferData positionData = new positionBufferData { CornerPosition = CornerPosition, SpaceBetweenPoints = spaceBetweenPoints, CenterOfPlanet = MarchingContext.CentreOfPlanet, AmountOfPointsPerAxis = MarchingContext.AmountOfPointsPerAxis };
+        positionBufferData positionData = new positionBufferData 
+        {
+            CornerPosition = CornerPosition, 
+            SpaceBetweenPoints = spaceBetweenPoints, 
+            CenterOfPlanet = MarchingContext.CentreOfPlanet, 
+            AmountOfPointsPerAxis = MarchingContext.AmountOfPointsPerAxis,
+            NoiseAmplitude = MarchingContext.NoiseLayerSettings.Layers[0].Amplitude,
+            NoiseScale = MarchingContext.NoiseLayerSettings.Layers[0].NoiseScale
+        };
         positionBufferData[] positionDataArray = new positionBufferData[1];
         positionDataArray[0] = positionData;
 
@@ -46,7 +56,7 @@ public class MarchingChunk
                   (MarchingContext.AmountOfPointsPerAxis + 1);
 
 
-        inputBuffer = new ComputeBuffer(1, (sizeof(float) * 9) + sizeof(int) * 1);
+        inputBuffer = new ComputeBuffer(1, (sizeof(float) * 11) + sizeof(int) * 1);
         resultBuffer = new ComputeBuffer(totalPoints,sizeof(float) * 4 + sizeof(int) * 1 );
 
         inputBuffer.SetData(positionDataArray);

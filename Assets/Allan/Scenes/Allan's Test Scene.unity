@@ -605,15 +605,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 126.15757
+      value: 51.5
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3987.0752
+      value: 3442.1
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -306.11945
+      value: -180.2
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalRotation.w
@@ -997,19 +997,20 @@ MonoBehaviour:
   startLod: 0
   maxLod: 10
   CentreOfPlanet: {x: 0, y: 0, z: 0}
-  AmountOfPointsPerAxis: 20
+  AmountOfPointsPerAxis: 40
   material: {fileID: 2100000, guid: ae606aa015035014a92f24af0bb9a693, type: 2}
+  reset: 0
   Context:
-    AmountOfPointsPerAxis: 20
+    AmountOfPointsPerAxis: 30
     SurfaceLevel: 4000
     CentreOfPlanet: {x: 0, y: 0, z: 0}
     MaxLod: 10
     NoiseLayerSettings:
       Layers:
-      - NoiseScale: 0.001
-        Amplitude: 0.1
+      - NoiseScale: 0.003
+        Amplitude: 2200
       - NoiseScale: 0.0017
-        Amplitude: 0.05
+        Amplitude: 10
     computeShader: {fileID: 7200000, guid: 8e76631238c9d8942b6914e61786a0e7, type: 3}
 --- !u!4 &1639349332
 Transform:
