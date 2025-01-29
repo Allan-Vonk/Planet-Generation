@@ -16,9 +16,13 @@ public class QuadTree
     public MarchingChunk marchingChunk;
     private GameObject ColliderObject;
     private GameObject Player;
-    private int lod;
+    public int lod;
     //Unity variables
     private Mesh mesh = new Mesh();
+
+    // Add initialization state tracking
+    private bool m_IsGenerating;
+    private bool m_IsDisposed;
 
     public QuadTree (Cube Boundary, QuadTreeStarter Root, int lod)
     {
@@ -32,7 +36,11 @@ public class QuadTree
         {
             Player = GameObject.FindGameObjectWithTag("Player");
         }
-        CreateChunk();
+        if (m_IsGenerating == false)
+        {
+            m_IsGenerating = true;
+            CreateChunk();
+        }
     }
     //Update being called from a monobehavior
     public void CalledUpdate ()
@@ -56,40 +64,42 @@ public class QuadTree
     }
     private void UpdateLOD ()
     {
-        // Calculate normalized distance ratio
         Vector3 playerPos = Player.transform.position;
-        float chunkSize = RelativeBoundary.size.x;
-        float sqrDistance = (playerPos - (RelativeBoundary.position + Root.transform.position)).sqrMagnitude;
-        
-        // Calculate LOD threshold using size-distance ratio and exponential falloff
-        float lodThreshold = chunkSize * Root.Context.LodDistanceMultiplier / (lod + 1);
-        bool shouldDivide = sqrDistance < lodThreshold * lodThreshold;
-        if (shouldDivide)
+        Vector3 chunkWorldPos = RelativeBoundary.position + Root.transform.position;
+        float sqrDistance = (playerPos - chunkWorldPos).sqrMagnitude;
+
+        int desiredLod = 0;
+        // Find the highest appropriate LOD for this distance
+        for (int lodLevel = Root.Context.MaxLod; lodLevel >= 0; lodLevel--)
         {
-            if (lod < Root.Context.MaxLod && !divided)
+            float lodRadius = Root.Context.BaseLodRadius * 
+                             Mathf.Pow(Root.Context.LodFalloff, Root.Context.MaxLod - lodLevel);
+            float sqrLodRadius = lodRadius * lodRadius;
+            
+            if (sqrDistance <= sqrLodRadius)
             {
-                SubDivide();
-                divided = true;
+                desiredLod = lodLevel;
+                break;
             }
         }
-        else
+
+        // Handle LOD transitions with hysteresis buffer
+        if (desiredLod > lod && !divided && lod < Root.Context.MaxLod)
         {
-            if (divided)
-            {
-                Debug.Log(shouldDivide);
-                UnDivide();
-                divided = false;
-                return;
-            }
+            SubDivide();
+            divided = true;
+        }
+        else if (desiredLod < lod && divided)
+        {
+            UnDivide();
+            divided = false;
         }
     }
     //Generate mesh & meshCollider
     private async void CreateChunk ()
     {
-        if (divided == true)
-        {
-            return;
-        }
+
+
         //Starting a asynchronous task to generate mesh data
         //var result = await Task.Run(()=>
         //{
@@ -99,7 +109,6 @@ public class QuadTree
         marchingChunk = new MarchingChunk(Root.Context, RelativeBoundary);
         await marchingChunk.Initialize(Root.Context, RelativeBoundary);
 
-
         MarchingChunk.MeshData meshData = marchingChunk.GetMeshData();
 
         mesh.vertices = meshData.Vertices.ToArray();
@@ -107,13 +116,18 @@ public class QuadTree
         mesh.triangles = meshData.Triangles.ToArray();
         mesh.RecalculateNormals();
 
-        //Only generate collider when in play mode
-        if (Application.isPlaying) GenerateCollider();
+        // Only generate collider if not already generated
+        if (Application.isPlaying && !ColliderObject) 
+        {
+            GenerateCollider();
+        }
+
     }
     
     //Generate a collider + Gamobject for the collider to attach to
     public void GenerateCollider ()
     {
+        Debug.Log("Generating collider " + m_IsGenerating);
         if (!ColliderObject )
         {
             ColliderObject = new GameObject();
@@ -128,6 +142,10 @@ public class QuadTree
     //Get the leaves in the quad tree 
     public void UnDivide ()
     {
+        foreach(QuadTree child in Children)
+        {
+            child.Dispose();
+        }
         Children.Clear();
         divided = false;
     }
@@ -206,4 +224,31 @@ public class QuadTree
         return BranchAndLeaves;
     }
 
+    public void Dispose()
+    {
+        if(m_IsDisposed) return;
+        m_IsDisposed = true;
+
+        // Clean up collider and children
+        if(ColliderObject && divided == false)
+        {
+            if(Application.isPlaying)
+                GameObject.Destroy(ColliderObject);
+        }
+
+        // Clean up children	
+        foreach(QuadTree child in Children)
+        {
+            child.Dispose();
+        }
+        Children.Clear();
+
+        // Release mesh memory
+        if(mesh != null)
+        {
+            if(Application.isPlaying)
+                GameObject.Destroy(mesh);
+
+        }
+    }
 }

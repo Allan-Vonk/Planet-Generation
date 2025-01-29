@@ -90,6 +90,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private bool m_Jump, m_PreviouslyGrounded, m_Jumping, m_IsGrounded;
 
         [SerializeField] private float m_TerminalVelocity = 50f; // Maximum falling speed
+        [SerializeField] private Transform m_PlanetCenter; // Reference to the planet's center
 
         public Vector3 Velocity
         {
@@ -146,16 +147,16 @@ namespace UnityStandardAssets.Characters.FirstPerson
             if ((Mathf.Abs(input.x) > float.Epsilon || Mathf.Abs(input.y) > float.Epsilon) && (advancedSettings.airControl || m_IsGrounded))
             {
                 // always move along the camera forward as it is the direction that it being aimed at
-                Vector3 desiredMove = cam.transform.forward*input.y + cam.transform.right*input.x;
+                Vector3 desiredMove = cam.transform.forward * input.y + cam.transform.right * input.x;
                 desiredMove = Vector3.ProjectOnPlane(desiredMove, m_GroundContactNormal).normalized;
 
-                desiredMove.x = desiredMove.x*movementSettings.CurrentTargetSpeed;
-                desiredMove.z = desiredMove.z*movementSettings.CurrentTargetSpeed;
-                desiredMove.y = desiredMove.y*movementSettings.CurrentTargetSpeed;
+                desiredMove.x = desiredMove.x * movementSettings.CurrentTargetSpeed;
+                desiredMove.z = desiredMove.z * movementSettings.CurrentTargetSpeed;
+                desiredMove.y = desiredMove.y * movementSettings.CurrentTargetSpeed;
                 if (m_RigidBody.velocity.sqrMagnitude <
-                    (movementSettings.CurrentTargetSpeed*movementSettings.CurrentTargetSpeed))
+                    (movementSettings.CurrentTargetSpeed * movementSettings.CurrentTargetSpeed))
                 {
-                    m_RigidBody.AddForce(desiredMove*SlopeMultiplier(), ForceMode.Impulse);
+                    m_RigidBody.AddForce(desiredMove * SlopeMultiplier(), ForceMode.Impulse);
                 }
             }
 
@@ -185,10 +186,17 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 }
             }
 
-            // Clamp the velocity to terminal velocity
-            if (m_RigidBody.velocity.y < -m_TerminalVelocity)
+            // Calculate the direction towards the planet's center
+            Vector3 directionToPlanetCenter = (m_PlanetCenter.position - transform.position).normalized;
+
+            // Project the velocity onto the direction towards the planet's center
+            float velocityTowardsCenter = Vector3.Dot(m_RigidBody.velocity, directionToPlanetCenter);
+
+            // Clamp the velocity towards the planet's center to terminal velocity
+            if (velocityTowardsCenter < -m_TerminalVelocity)
             {
-                m_RigidBody.velocity = new Vector3(m_RigidBody.velocity.x, -m_TerminalVelocity, m_RigidBody.velocity.z);
+                Vector3 clampedVelocity = m_RigidBody.velocity - directionToPlanetCenter * (velocityTowardsCenter + m_TerminalVelocity);
+                m_RigidBody.velocity = clampedVelocity;
             }
 
             m_Jump = false;

@@ -17,6 +17,9 @@ public struct MarchingCubeContext
     public NoiseLayerSettings NoiseLayerSettings;
     public ComputeShader computeShader;
 
+    public float BaseLodRadius;
+    public float LodFalloff;
+
 }
 [Serializable]
 public struct NoiseLayerSettings

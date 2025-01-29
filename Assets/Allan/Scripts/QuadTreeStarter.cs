@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 [ExecuteInEditMode]
 public class QuadTreeStarter : MonoBehaviour
 {
@@ -14,33 +15,37 @@ public class QuadTreeStarter : MonoBehaviour
     public Vector3 CentreOfPlanet;
     public int AmountOfPointsPerAxis = 20;
     public Material material;
-
-    public bool reset = false;
     public MarchingCubeContext Context;
+
+    private bool initiated = false;
 
     private QuadTree qt;
     private void Start ()
     {
-        Application.targetFrameRate = 60;
+        initiated = true;
+        Debug.Log("Starting");
         Initiate();
     }
     private void OnValidate()
     {
-        Start();
+        if (!Application.isPlaying)
+        {
+            if (!initiated)
+            {
+                Initiate();
+                initiated = true;
+            }
+        }
     }
     private void Initiate ()
     {
+        Debug.Log("Initiating"); 
         Context.CentreOfPlanet = transform;
 
         qt = new QuadTree(new Cube(CentreOfPlanet, new Vector3Int(10000, 10000, 10000)), this, startLod);
     }
     private void Update ()
     {
-        if (reset)
-        {
-            Start();
-            reset = false;
-        }
         Leaves = qt.GetLeaves();
         BranchesAndLeaves = qt.GetBranchesAndLeaves();
         foreach (QuadTree quadTree in BranchesAndLeaves)
@@ -68,9 +73,10 @@ public class QuadTreeStarter : MonoBehaviour
     }
     private void OnDrawGizmos ()
     {
+        int highestLod = Leaves.Max(leaf => leaf.lod);
         foreach (QuadTree leaf in Leaves)
         {
-            if (leaf.divided == false)
+            if (leaf.divided == false && leaf.lod == highestLod)
             {
                 Gizmos.color = Color.red;
                 Gizmos.DrawWireCube(leaf.RelativeBoundary.position + Context.CentreOfPlanet.position, leaf.RelativeBoundary.size);
