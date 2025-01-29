@@ -11,6 +11,7 @@ public struct MarchingCubeContext
     public Cube Cube;
     public int AmountOfPointsPerAxis;
     public float SurfaceLevel;
+    public int PlanetSize;
     public Transform CentreOfPlanet;
     public int MaxLod;
     public float LodDistanceMultiplier;

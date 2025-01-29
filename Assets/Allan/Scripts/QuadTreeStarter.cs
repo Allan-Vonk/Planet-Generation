@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEditor;
+using UnityEngine.Rendering;
+
 [ExecuteInEditMode]
 public class QuadTreeStarter : MonoBehaviour
 {
@@ -20,21 +23,20 @@ public class QuadTreeStarter : MonoBehaviour
     private bool initiated = false;
 
     private QuadTree qt;
+    private GameObject Player;
     private void Start ()
     {
         initiated = true;
         Debug.Log("Starting");
         Initiate();
+        Player = GameObject.FindGameObjectWithTag("Player");
     }
     private void OnValidate()
     {
+        Player = GameObject.FindGameObjectWithTag("Player");
         if (!Application.isPlaying)
         {
-            if (!initiated)
-            {
-                Initiate();
-                initiated = true;
-            }
+            Initiate();
         }
     }
     private void Initiate ()
@@ -42,7 +44,7 @@ public class QuadTreeStarter : MonoBehaviour
         Debug.Log("Initiating"); 
         Context.CentreOfPlanet = transform;
 
-        qt = new QuadTree(new Cube(CentreOfPlanet, new Vector3Int(10000, 10000, 10000)), this, startLod);
+        qt = new QuadTree(new Cube(CentreOfPlanet, new Vector3(Context.PlanetSize, Context.PlanetSize, Context.PlanetSize)), this, startLod);
     }
     private void Update ()
     {
@@ -74,14 +76,30 @@ public class QuadTreeStarter : MonoBehaviour
     private void OnDrawGizmos ()
     {
         int highestLod = Leaves.Max(leaf => leaf.lod);
+        Handles.zTest = CompareFunction.LessEqual; // Set depth testing to respect the depth buffer
+
         foreach (QuadTree leaf in Leaves)
         {
-            if (leaf.divided == false && leaf.lod == highestLod)
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireCube(leaf.RelativeBoundary.position + Context.CentreOfPlanet.position, leaf.RelativeBoundary.size);
-            }
+            Vector3 position = leaf.RelativeBoundary.position + Context.CentreOfPlanet.position;
+            Vector3 size = leaf.RelativeBoundary.size;
+
+            // Calculate the color based on the LOD level
+            float lodRatio = (float)leaf.lod / highestLod;
+            Handles.color = Color.Lerp(Color.green, Color.red, lodRatio);
+
+            Handles.DrawWireCube(position, size);
         }
+
+
+    // Draw a circle around the player to visualize the LOD radius
+    if (Player != null)
+    {
+        float lodRadius = (Context.BaseLodRadius* (Context.PlanetSize/10000)) * 
+                         Mathf.Pow(Context.LodFalloff, Context.MaxLod - 0);
+        Vector3 playerPosition = Player.transform.position;
+        Gizmos.color = Color.yellow; // Set the color of the circle
+        Gizmos.DrawWireSphere(playerPosition, lodRadius); // Draw a wire sphere around the player
+    }
     }
 }
 

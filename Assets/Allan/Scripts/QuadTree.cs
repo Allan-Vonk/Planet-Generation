@@ -188,7 +188,6 @@ public class QuadTree
             }
         }
     }
-    //Generate a collider + Gamobject for the collider to attach to
     public List<QuadTree> GetLeaves ()
     {
         List<QuadTree>leaves = new List<QuadTree>();
@@ -205,7 +204,6 @@ public class QuadTree
         }
         return leaves;
     }
-    //Get ALL the Quadtree classes in the Quadtree
     public List<QuadTree> GetBranchesAndLeaves ()
     {
         List<QuadTree>BranchAndLeaves = new List<QuadTree>();

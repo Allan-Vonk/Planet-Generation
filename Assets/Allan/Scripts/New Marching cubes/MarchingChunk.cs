@@ -101,10 +101,12 @@ public class MarchingChunk
         //}
         return noiseValue * scale;
     }
+
     //clear mesh and generate new mesh data
     private void GenerateMeshData ()
     {
         ClearMesh();
+
         for (int x = 0; x < MarchingContext.AmountOfPointsPerAxis-1; x++)
         {
             for (int y = 0; y < MarchingContext.AmountOfPointsPerAxis-1; y++)

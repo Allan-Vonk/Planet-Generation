@@ -199,6 +199,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 m_RigidBody.velocity = clampedVelocity;
             }
 
+            
+
             m_Jump = false;
         }
 
@@ -255,7 +257,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 m_RigidBody.velocity = velRotation*m_RigidBody.velocity;
             }
         }
-
+        
         /// sphere cast down just beyond the bottom of the capsule to see if the capsule is colliding round the bottom
         private void GroundCheck()
         {
