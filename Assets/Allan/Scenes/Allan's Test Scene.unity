@@ -1037,7 +1037,7 @@ MonoBehaviour:
         Amplitude: 10
     computeShader: {fileID: 7200000, guid: 8e76631238c9d8942b6914e61786a0e7, type: 3}
     BaseLodRadius: 150
-    LodFalloff: 2.5
+    LodFalloff: 1.9
 --- !u!4 &1639349332
 Transform:
   m_ObjectHideFlags: 0
