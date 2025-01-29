@@ -609,7 +609,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 34692.79
+      value: 34709.41
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalPosition.z
@@ -673,7 +673,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5400000, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_IsKinematic
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5400000, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_CollisionDetection
@@ -1027,8 +1027,8 @@ MonoBehaviour:
     AmountOfPointsPerAxis: 30
     SurfaceLevel: 4000
     CentreOfPlanet: {fileID: 1639349332}
-    MaxLod: 10
-    LodDistanceMultiplier: 4.67
+    MaxLod: 8
+    LodDistanceMultiplier: 14.33
     NoiseLayerSettings:
       Layers:
       - NoiseScale: 0.003
@@ -1036,8 +1036,8 @@ MonoBehaviour:
       - NoiseScale: 0.0017
         Amplitude: 10
     computeShader: {fileID: 7200000, guid: 8e76631238c9d8942b6914e61786a0e7, type: 3}
-    BaseLodRadius: 28.37
-    LodFalloff: 2
+    BaseLodRadius: 150
+    LodFalloff: 2.5
 --- !u!4 &1639349332
 Transform:
   m_ObjectHideFlags: 0
