@@ -1,84 +1,90 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public class QuadTree
 {
-    //Variables
-    public List<Point3>Points = new List<Point3>();
+    //Quadtree variables
     public bool divided = false;
     public List<QuadTree>Children = new List<QuadTree>();
+    private QuadTreeStarter Root;
+    public Cube RelativeBoundary;
+
+    //Marching cube variables
     public MarchingChunk marchingChunk;
-    //Privates
     private GameObject ColliderObject;
     private GameObject Player;
-    private MarchingCubeContext MarchingContext;
-    private QuadTreeStarter Root;
-    private Cube Boundary;
-    private Mesh mesh = new Mesh();
-    private Material material;
-    private bool ColliderState = true;
-    
     private int lod;
+    //Unity variables
+    private Mesh mesh = new Mesh();
 
-    public QuadTree (Cube Boundary, QuadTreeStarter Root, Material material, int lod, MarchingCubeContext Context)
+    public QuadTree (Cube Boundary, QuadTreeStarter Root, int lod)
     {
-        //Setting context
-        MarchingContext = Context;
         //Setting other variables
-        this.material = material;
-        this.Boundary = Boundary;
+        this.RelativeBoundary = Boundary;
         this.lod = lod + 1;
         this.Root = Root;
-        //For gizmos
-        this.Root.Boundaries.Add(Boundary);
-    }
-    //Update being called from a monobehavior
-    public void CalledUpdate ()
-    {
-        //Check if chunk should still be alive or not
-        if (ColliderObject && ColliderState != ColliderObject.activeSelf)
-        {
-            //Kill the chunk
-            ColliderObject.SetActive(ColliderState);
-            Root.KillChunk(ColliderObject);
-        }
+
         //Get the player
         if (!Player)
         {
             Player = GameObject.FindGameObjectWithTag("Player");
         }
-        //Manage if the chunk should divide or undivide
-        Vector3 pos = Player.transform.position;
-        float distance = Vector3.Distance(pos,Boundary.position);
-        if (distance < Boundary.size.x)
-        {
-            if (lod < MarchingContext.MaxLod)
-            {
-                if (divided == false)
-                {
-                    SubDivide();
-                }
-            }
-        }
-        else
-        {
-            if (divided == true)
-            {
-                UnDivide();
-                return;
-            }
-        }
+        CreateChunk();
+    }
+    //Update being called from a monobehavior
+    public void CalledUpdate ()
+    {
+        UpdateColliderState();
+
+        UpdateLOD();
 
         //Draw mesh
         if (divided == false && marchingChunk != null && mesh != null)
         {
-            Graphics.DrawMesh(mesh, MarchingContext.CentreOfPlanet, Quaternion.identity,material,0);
+            Graphics.DrawMesh(mesh, Root.Context.CentreOfPlanet.position, Quaternion.identity,Root.material,0);
+        }
+    }
+    private void UpdateColliderState ()
+    {
+        if (ColliderObject && !divided != ColliderObject.activeSelf)
+        {
+            ColliderObject.SetActive(!divided);
+        }
+    }
+    private void UpdateLOD ()
+    {
+        // Calculate normalized distance ratio
+        Vector3 playerPos = Player.transform.position;
+        float chunkSize = RelativeBoundary.size.x;
+        float sqrDistance = (playerPos - (RelativeBoundary.position + Root.transform.position)).sqrMagnitude;
+        
+        // Calculate LOD threshold using size-distance ratio and exponential falloff
+        float lodThreshold = chunkSize * Root.Context.LodDistanceMultiplier / (lod + 1);
+        bool shouldDivide = sqrDistance < lodThreshold * lodThreshold;
+        if (shouldDivide)
+        {
+            if (lod < Root.Context.MaxLod && !divided)
+            {
+                SubDivide();
+                divided = true;
+            }
+        }
+        else
+        {
+            if (divided)
+            {
+                Debug.Log(shouldDivide);
+                UnDivide();
+                divided = false;
+                return;
+            }
         }
     }
     //Generate mesh & meshCollider
-    public async void CreateChunk ()
+    private async void CreateChunk ()
     {
         if (divided == true)
         {
@@ -90,72 +96,70 @@ public class QuadTree
         //    return new MarchingChunk(MarchingContext,Boundary);
         //});
         //Making mesh here instead of in the MarchingChunk for easier acces and because its not possible to create a new mesh on another threat
-        marchingChunk = new MarchingChunk(MarchingContext, Boundary);
-        marchingChunk.GeneratePositionData();
-        await Task.Run(() => marchingChunk.GenerateMeshData());
+        marchingChunk = new MarchingChunk(Root.Context, RelativeBoundary);
+        await marchingChunk.Initialize(Root.Context, RelativeBoundary);
 
-        if (mesh)
-        {
-            mesh.vertices = marchingChunk.m_vertices.ToArray();
-            marchingChunk.m_triangles.Reverse();
-            mesh.triangles = marchingChunk.m_triangles.ToArray();
-        }
+
+        MarchingChunk.MeshData meshData = marchingChunk.GetMeshData();
+
+        mesh.vertices = meshData.Vertices.ToArray();
+        meshData.Triangles.Reverse();
+        mesh.triangles = meshData.Triangles.ToArray();
         mesh.RecalculateNormals();
-        marchingChunk.mesh = mesh;
+
+        //Only generate collider when in play mode
         if (Application.isPlaying) GenerateCollider();
     }
-    //Undivide the Quadtree
+    
+    //Generate a collider + Gamobject for the collider to attach to
     public void GenerateCollider ()
     {
-        if (mesh != null && mesh.vertexCount > 0)
+        if (!ColliderObject )
         {
             ColliderObject = new GameObject();
+            ColliderObject.name = "Collider: " + RelativeBoundary.position;
+            ColliderObject.transform.parent = Root.gameObject.transform;
+            ColliderObject.transform.position = Root.Context.CentreOfPlanet.position;
             MeshCollider collider = ColliderObject.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
         }
-    }
-    public void DestroyCollider ()
-    {
-        Object.Destroy(ColliderObject);
+
     }
     //Get the leaves in the quad tree 
     public void UnDivide ()
     {
         Children.Clear();
         divided = false;
-        ColliderState = true;
     }
     //Devides the Quadtree into 8 more Quads
     public void SubDivide ()
     {
         if (divided == false)
         {
-            //Setting variables for easy acces
-            float x = Boundary.position.x;
-            float y = Boundary.position.y;
-            float z = Boundary.position.z;
-            float w = Boundary.size.x;
-            float h = Boundary.size.y;
-            float l = Boundary.size.z;
-            //Creating boundaries
-            Cube NE1 = new Cube(new Vector3(x + (w/4),y + (h/4),z + (l/4)), new Vector3(w/2,h/2,l/2));
-            Cube SE1 = new Cube(new Vector3(x + (w/4),y + (h/4),z - (l/4)), new Vector3(w/2,h/2,l/2));
-            Cube SW1 = new Cube(new Vector3(x - (w/4),y + (h/4),z - (l/4)), new Vector3(w/2,h/2,l/2));
-            Cube NW1 = new Cube(new Vector3(x - (w/4),y + (h/4),z + (l/4)), new Vector3(w/2,h/2,l/2));
-            Cube NE2 = new Cube(new Vector3(x + (w/4),y - (h/4),z + (l/4)), new Vector3(w/2,h/2,l/2));
-            Cube SE2 = new Cube(new Vector3(x + (w/4),y - (h/4),z - (l/4)), new Vector3(w/2,h/2,l/2));
-            Cube SW2 = new Cube(new Vector3(x - (w/4),y - (h/4),z - (l/4)), new Vector3(w/2,h/2,l/2));
-            Cube NW2 = new Cube(new Vector3(x - (w/4),y - (h/4),z + (l/4)), new Vector3(w/2,h/2,l/2));
-            //Instantiating Quadtrees
-            Children.Add(new QuadTree(NE1, Root, material, lod, MarchingContext));
-            Children.Add(new QuadTree(SE1, Root, material, lod, MarchingContext));
-            Children.Add(new QuadTree(SW1, Root, material, lod, MarchingContext));
-            Children.Add(new QuadTree(NW1, Root, material, lod, MarchingContext));
-            Children.Add(new QuadTree(NE2, Root, material, lod, MarchingContext));
-            Children.Add(new QuadTree(SE2, Root, material, lod, MarchingContext));
-            Children.Add(new QuadTree(SW2, Root, material, lod, MarchingContext));
-            Children.Add(new QuadTree(NW2, Root, material, lod, MarchingContext));
-
+            // Extracting boundary properties for easier access
+            float quarterWidth = RelativeBoundary.size.x / 4;
+            float quarterHeight = RelativeBoundary.size.y / 4;
+            float quarterLength = RelativeBoundary.size.z / 4;
+            float x = RelativeBoundary.position.x;
+            float y = RelativeBoundary.position.y;
+            float z = RelativeBoundary.position.z;
+            // Creating boundaries for the 8 sub-cubes
+            Cube[] subCubes = new Cube[8]
+            {
+                new Cube(new Vector3(x + quarterWidth, y + quarterHeight, z + quarterLength), new Vector3(quarterWidth * 2, quarterHeight * 2, quarterLength * 2)),
+                new Cube(new Vector3(x + quarterWidth, y + quarterHeight, z - quarterLength), new Vector3(quarterWidth * 2, quarterHeight * 2, quarterLength * 2)),
+                new Cube(new Vector3(x - quarterWidth, y + quarterHeight, z - quarterLength), new Vector3(quarterWidth * 2, quarterHeight * 2, quarterLength * 2)),
+                new Cube(new Vector3(x - quarterWidth, y + quarterHeight, z + quarterLength), new Vector3(quarterWidth * 2, quarterHeight * 2, quarterLength * 2)),
+                new Cube(new Vector3(x + quarterWidth, y - quarterHeight, z + quarterLength), new Vector3(quarterWidth * 2, quarterHeight * 2, quarterLength * 2)),
+                new Cube(new Vector3(x + quarterWidth, y - quarterHeight, z - quarterLength), new Vector3(quarterWidth * 2, quarterHeight * 2, quarterLength * 2)),
+                new Cube(new Vector3(x - quarterWidth, y - quarterHeight, z - quarterLength), new Vector3(quarterWidth * 2, quarterHeight * 2, quarterLength * 2)),
+                new Cube(new Vector3(x - quarterWidth, y - quarterHeight, z + quarterLength), new Vector3(quarterWidth * 2, quarterHeight * 2, quarterLength * 2))
+            };
+            // Instantiating QuadTrees for each sub-cube
+            foreach (Cube subCube in subCubes)
+            {
+                Children.Add(new QuadTree(subCube, Root, lod));
+            }
             divided = true;
         }
         else
@@ -165,13 +169,6 @@ public class QuadTree
                 quadTree.SubDivide();
             }
         }
-        divided = true;
-        //Generate Marching cube chunks in the new Quads
-        foreach (QuadTree Child in Children)
-        {
-            Child.CreateChunk();
-        }
-        ColliderState = false;
     }
     //Generate a collider + Gamobject for the collider to attach to
     public List<QuadTree> GetLeaves ()

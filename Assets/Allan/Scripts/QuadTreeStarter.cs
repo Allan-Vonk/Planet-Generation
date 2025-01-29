@@ -4,9 +4,6 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class QuadTreeStarter : MonoBehaviour
 {
-    public List<Cube>Boundaries = new List<Cube>();
-    public List<Point3>Points = new List<Point3>();
-    public List<Point>marchingCubePoints = new List<Point>();
     public List<QuadTree>Leaves = new List<QuadTree>();
     public List<QuadTree>BranchesAndLeaves = new List<QuadTree>();
     public float NoiseScale;
@@ -19,7 +16,7 @@ public class QuadTreeStarter : MonoBehaviour
     public Material material;
 
     public bool reset = false;
-    [SerializeField] MarchingCubeContext Context;
+    public MarchingCubeContext Context;
 
     private QuadTree qt;
     private void Start ()
@@ -33,35 +30,9 @@ public class QuadTreeStarter : MonoBehaviour
     }
     private void Initiate ()
     {
-        Context.CentreOfPlanet = transform.position;
+        Context.CentreOfPlanet = transform;
 
-        qt = new QuadTree(new Cube(CentreOfPlanet, new Vector3Int(10000, 10000, 10000)), this, material, startLod, Context);
-
-        //for (int i = 0; i < 0; i++)
-        //{
-        //    qt.SubDevide();
-        //}
-        //Gather leaves
-        //Generate cubes for the leaves
-        Leaves = qt.GetLeaves();
-        foreach (QuadTree quadTree in Leaves)
-        {
-            quadTree.CreateChunk();
-            //foreach (Point point in quadTree.marchingChunk.Points)
-            //{
-            //    marchingCubePoints.Add(point);
-            //}
-        }
-    }
-    public void KillChunk (GameObject gameObject)
-    {
-        StartCoroutine(KillGameObject(gameObject));
-    }
-    IEnumerator KillGameObject (GameObject gameObject)
-    {
-        yield return new WaitForSeconds(0);
-        Object.DestroyImmediate(gameObject);
-        yield return null;
+        qt = new QuadTree(new Cube(CentreOfPlanet, new Vector3Int(10000, 10000, 10000)), this, startLod);
     }
     private void Update ()
     {
@@ -95,28 +66,15 @@ public class QuadTreeStarter : MonoBehaviour
         //    Initiate();
         //}
     }
-    public Vector3 GetWorldPosition ()
-    {
-        return transform.position;
-    }
     private void OnDrawGizmos ()
     {
-        foreach (Cube cube in Boundaries)
+        foreach (QuadTree leaf in Leaves)
         {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireCube(cube.position, cube.size);
-        }
-        foreach (Point3 point in Points)
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(point.position, .1f);
-        }
-        foreach (Point point in marchingCubePoints)
-        {
-
-            Gizmos.color = (point.value > surfaceLevel) ? Color.green : Color.red;
-            Gizmos.DrawWireSphere(point.position, 10f);
-            
+            if (leaf.divided == false)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireCube(leaf.RelativeBoundary.position + Context.CentreOfPlanet.position, leaf.RelativeBoundary.size);
+            }
         }
     }
 }

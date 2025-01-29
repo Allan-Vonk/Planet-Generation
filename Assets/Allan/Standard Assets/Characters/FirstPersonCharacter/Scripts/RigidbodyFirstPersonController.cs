@@ -89,6 +89,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private Vector3 m_GroundContactNormal;
         private bool m_Jump, m_PreviouslyGrounded, m_Jumping, m_IsGrounded;
 
+        [SerializeField] private float m_TerminalVelocity = 50f; // Maximum falling speed
 
         public Vector3 Velocity
         {
@@ -183,6 +184,13 @@ namespace UnityStandardAssets.Characters.FirstPerson
                     StickToGroundHelper();
                 }
             }
+
+            // Clamp the velocity to terminal velocity
+            if (m_RigidBody.velocity.y < -m_TerminalVelocity)
+            {
+                m_RigidBody.velocity = new Vector3(m_RigidBody.velocity.x, -m_TerminalVelocity, m_RigidBody.velocity.z);
+            }
+
             m_Jump = false;
         }
 

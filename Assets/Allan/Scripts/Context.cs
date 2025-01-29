@@ -11,8 +11,9 @@ public struct MarchingCubeContext
     public Cube Cube;
     public int AmountOfPointsPerAxis;
     public float SurfaceLevel;
-    public Vector3 CentreOfPlanet;
+    public Transform CentreOfPlanet;
     public int MaxLod;
+    public float LodDistanceMultiplier;
     public NoiseLayerSettings NoiseLayerSettings;
     public ComputeShader computeShader;
 

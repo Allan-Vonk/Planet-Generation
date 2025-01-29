@@ -71,7 +71,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     // Example: Use the data from the struct to calculate a value
     float3 position = data.CornerPosition + float3(id.x * data.SpaceBetweenPoints.x, id.y * data.SpaceBetweenPoints.y, id.z * data.SpaceBetweenPoints.z);
 
-    float distanceToPlanetCenter = distance(position, data.PlanetCenterPosition);
+    float distanceToPlanetCenter = distance(position + data.PlanetCenterPosition, data.PlanetCenterPosition);
 
     ResultBuffer[index].position = position;
     ResultBuffer[index].value = distanceToPlanetCenter + (Get3DPerlinValue(position*data.NoiseScale)*data.NoiseAmplitude);

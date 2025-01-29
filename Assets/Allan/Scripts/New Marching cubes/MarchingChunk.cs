@@ -3,28 +3,50 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using System.Threading.Tasks;
 
 public class MarchingChunk
 {
-    //Variables
-    public Mesh mesh;
-    public List<Vector3> m_vertices = new List<Vector3>();
-    public List<int> m_triangles = new List<int>();
-
-
-    ComputeBuffer inputBuffer; 
-    ComputeBuffer resultBuffer;
-
-    //Privates
+    private List<Vector3> m_vertices = new List<Vector3>();
+    private List<int> m_triangles = new List<int>();
     private MarchingCubeContext MarchingContext;
     private Point[] Points;
-    private Vector3 CornerPosition = Vector3.zero;
-    public MarchingChunk (MarchingCubeContext Context, Cube Boundary)
-    {
+    private positionBufferData[] positionDataArray;
+
+    public MarchingChunk(MarchingCubeContext Context, Cube Boundary){
         MarchingContext = Context;
         MarchingContext.Cube = Boundary;
-        Points = new Point[MarchingContext.AmountOfPointsPerAxis + 1 * MarchingContext.AmountOfPointsPerAxis + 1* MarchingContext.AmountOfPointsPerAxis + 1];
+        Points = new Point[MarchingContext.AmountOfPointsPerAxis + 1 * MarchingContext.AmountOfPointsPerAxis + 1 * MarchingContext.AmountOfPointsPerAxis + 1];
+
+        // Calculate and store values
+        Vector3 cornerPosition = MarchingContext.Cube.position - new Vector3(MarchingContext.Cube.size.x / 2, MarchingContext.Cube.size.y / 2, MarchingContext.Cube.size.z / 2);
+        Vector3 spaceBetweenPoints = MarchingContext.Cube.size / (MarchingContext.AmountOfPointsPerAxis - 1);
+        int totalPoints = (MarchingContext.AmountOfPointsPerAxis + 1) *
+                          (MarchingContext.AmountOfPointsPerAxis + 1) *
+                          (MarchingContext.AmountOfPointsPerAxis + 1);
+
+        // Initialize position data array
+
+        positionBufferData positionData = new positionBufferData
+        {
+            CornerPosition = cornerPosition,
+            SpaceBetweenPoints = spaceBetweenPoints,
+            CenterOfPlanet = MarchingContext.CentreOfPlanet.position,
+            AmountOfPointsPerAxis = MarchingContext.AmountOfPointsPerAxis,
+            NoiseAmplitude = MarchingContext.NoiseLayerSettings.Layers[0].Amplitude,
+            NoiseScale = MarchingContext.NoiseLayerSettings.Layers[0].NoiseScale
+        };
+        positionDataArray = new positionBufferData[1];
+        positionDataArray[0] = positionData;
+        GeneratePositionData(totalPoints);
     }
+
+    public async Task<MarchingChunk> Initialize(MarchingCubeContext Context, Cube Boundary)
+    {
+        await Task.Run(() => GenerateMeshData());
+        return this;
+    }
+
     //instantiate the mapvalues and assign world positions to them
     private struct positionBufferData
     {
@@ -35,77 +57,30 @@ public class MarchingChunk
         public float NoiseAmplitude;
         public int AmountOfPointsPerAxis;
     }
-    public void GeneratePositionData ()
+    private void GeneratePositionData (int totalPoints)
     {
-        CornerPosition = (MarchingContext.Cube.position - new Vector3(MarchingContext.Cube.size.x / 2, MarchingContext.Cube.size.y / 2, MarchingContext.Cube.size.z / 2));
-        Vector3 spaceBetweenPoints = MarchingContext.Cube.size / (MarchingContext.AmountOfPointsPerAxis-1);
-        positionBufferData positionData = new positionBufferData 
+        // Localize buffers
+        using (ComputeBuffer inputBuffer = new ComputeBuffer(1, (sizeof(float) * 11) + sizeof(int) * 1))
+        using (ComputeBuffer resultBuffer = new ComputeBuffer(totalPoints, sizeof(float) * 4 + sizeof(int) * 1))
         {
-            CornerPosition = CornerPosition, 
-            SpaceBetweenPoints = spaceBetweenPoints, 
-            CenterOfPlanet = MarchingContext.CentreOfPlanet, 
-            AmountOfPointsPerAxis = MarchingContext.AmountOfPointsPerAxis,
-            NoiseAmplitude = MarchingContext.NoiseLayerSettings.Layers[0].Amplitude,
-            NoiseScale = MarchingContext.NoiseLayerSettings.Layers[0].NoiseScale
-        };
-        positionBufferData[] positionDataArray = new positionBufferData[1];
-        positionDataArray[0] = positionData;
+            inputBuffer.SetData(positionDataArray);
 
-        int totalPoints = (MarchingContext.AmountOfPointsPerAxis +1) *
-                  (MarchingContext.AmountOfPointsPerAxis + 1) *
-                  (MarchingContext.AmountOfPointsPerAxis + 1);
+            int kernelIndex = MarchingContext.computeShader.FindKernel("CSMain");
 
+            MarchingContext.computeShader.SetBuffer(kernelIndex, "PositionBuffer", inputBuffer);
+            MarchingContext.computeShader.SetBuffer(kernelIndex, "ResultBuffer", resultBuffer);
 
-        inputBuffer = new ComputeBuffer(1, (sizeof(float) * 11) + sizeof(int) * 1);
-        resultBuffer = new ComputeBuffer(totalPoints,sizeof(float) * 4 + sizeof(int) * 1 );
+            // Dispatch the compute shader
+            MarchingContext.computeShader.Dispatch(kernelIndex, MarchingContext.AmountOfPointsPerAxis, MarchingContext.AmountOfPointsPerAxis, MarchingContext.AmountOfPointsPerAxis);
 
-        inputBuffer.SetData(positionDataArray);
-
-        int kernelIndex = MarchingContext.computeShader.FindKernel("CSMain");
-
-        MarchingContext.computeShader.SetBuffer(kernelIndex, "PositionBuffer", inputBuffer);
-        MarchingContext.computeShader.SetBuffer(kernelIndex, "ResultBuffer", resultBuffer);
-
-        // Dispatch the compute shader
-
-        MarchingContext.computeShader.Dispatch(kernelIndex, MarchingContext.AmountOfPointsPerAxis, MarchingContext.AmountOfPointsPerAxis, MarchingContext.AmountOfPointsPerAxis);
-
-        // Retrieve the result data from the GPU
-        Point[] resultArray = new Point[totalPoints];
-
-        resultBuffer.GetData(resultArray);
-        Points = resultArray;
-        // Release buffers when done
-        inputBuffer.Release();
-        resultBuffer.Release();
-
-
-
-        //for (int x = 0; x < MarchingContext.AmountOfPointsPerAxis + 1; x++)
-        //{
-        //    for (int y = 0; y < MarchingContext.AmountOfPointsPerAxis + 1; y++)
-        //    {
-        //        for (int z = 0; z < MarchingContext.AmountOfPointsPerAxis + 1; z++)
-        //        {
-        //            //POINTS PER AXIS
-        //            //space between points
-        //            //corner position
-        //            //center pos
-        //            //Assign position worldPositions
-
-        //            CornerPosition = (MarchingContext.Cube.position - new Vector3(MarchingContext.Cube.size.x / 2, MarchingContext.Cube.size.y / 2, MarchingContext.Cube.size.z / 2));
-        //            Points[x, y, z] = new Point();
-        //            Vector3 spaceBetweenPoints = MarchingContext.Cube.size / MarchingContext.AmountOfPointsPerAxis;
-        //            Points[x, y, z].position = CornerPosition + new Vector3(spaceBetweenPoints.x * x, spaceBetweenPoints.y * y, spaceBetweenPoints.z * z);
-        //            //Assign position values
-        //            float distancetocenter = Vector3.Distance(MarchingContext.CentreOfPlanet,Points[x,y,z].position);
-
-        //            Points[x, y, z].value = distancetocenter / 10000 + (EvaluatePoint(Points[x,y,z].position,20, 1, 1.7f))/*(Get3DPerlinValue((Points[x,y,z].position + new Vector3(1000,1000,1000)) * MarchingContext.NoiseScale) * MarchingContext.Amplitude)*/;
-        //        }
-        //    }
-        //}
+            // Retrieve the result data from the GPU
+            Point[] resultArray = new Point[totalPoints];
+            resultBuffer.GetData(resultArray);
+            Points = resultArray;
+        }
     }
-    public float EvaluatePoint(Vector3 point, int layers, float scale, float roughness)
+    //Depricated cpu code
+    private float EvaluatePoint(Vector3 point, int layers, float scale, float roughness)
     {
         float noiseValue = 0;
         //float frequency = MarchingContext.NoiseLayerSettings.NoiseScale;
@@ -113,7 +88,7 @@ public class MarchingChunk
 
         for (int i = 0; i < MarchingContext.NoiseLayerSettings.Layers.Length; i++)
         {
-            float v = Get3DPerlinValue(point * MarchingContext.NoiseLayerSettings.Layers[i].NoiseScale + new Vector3(1000, 1000, 1000));
+            float v = Get3DPerlinValue(point * MarchingContext.NoiseLayerSettings.Layers[i].NoiseScale);
             noiseValue += v * MarchingContext.NoiseLayerSettings.Layers[i].Amplitude;
         }
 
@@ -127,7 +102,7 @@ public class MarchingChunk
         return noiseValue * scale;
     }
     //clear mesh and generate new mesh data
-    public void GenerateMeshData ()
+    private void GenerateMeshData ()
     {
         ClearMesh();
         for (int x = 0; x < MarchingContext.AmountOfPointsPerAxis-1; x++)
@@ -141,7 +116,7 @@ public class MarchingChunk
             }
         }
     }
-    public int GetIndexOfItemFromFlattenedArray(int x, int y, int z, int amountOfPointsPerAxis)
+    private int GetIndexOfItemFromFlattenedArray(int x, int y, int z, int amountOfPointsPerAxis)
     {
         //id.x + (id.y * data.AmountOfPointsPerAxis) + (id.z * data.AmountOfPointsPerAxis * data.AmountOfPointsPerAxis);
         // Calculate the index in the flattened array
@@ -153,14 +128,14 @@ public class MarchingChunk
 
 
     //Clear the mesh
-    public void ClearMesh ()
+    private void ClearMesh ()
     {
         m_vertices.Clear();
         m_triangles.Clear();
     }
 
     //Marching cube algorithm to generate mesh data
-    public void March (Vector3Int pos)
+    private void March (Vector3Int pos)
     {
         //Get cube config
         float[] cube = new float[8];
@@ -282,5 +257,22 @@ public class MarchingChunk
         float CA = Mathf.PerlinNoise(position.z, position.x);
         float ABC = AB + BC + AC + BA + CB + CA;
         return ABC / 6f;
+    }
+
+    public struct MeshData
+    {
+        public List<Vector3> Vertices { get; }
+        public List<int> Triangles { get; }
+
+        public MeshData(List<Vector3> vertices, List<int> triangles)
+        {
+            Vertices = vertices;
+            Triangles = triangles;
+        }
+    }
+
+    public MeshData GetMeshData()
+    {
+        return new MeshData(m_vertices, m_triangles);
     }
 }
