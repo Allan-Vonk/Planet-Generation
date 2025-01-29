@@ -222,7 +222,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &163701541
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -248,6 +248,7 @@ MonoBehaviour:
     SurfaceLevel: 4000
     PlanetSize: 10000
     CentreOfPlanet: {fileID: 163701542}
+    CentreOfPlanetPosition: {x: -234, y: 52602, z: 32336}
     MaxLod: 8
     LodDistanceMultiplier: 14.33
     NoiseLayerSettings:
@@ -257,6 +258,7 @@ MonoBehaviour:
       - NoiseScale: 0.0017
         Amplitude: 10
     computeShader: {fileID: 7200000, guid: 8e76631238c9d8942b6914e61786a0e7, type: 3}
+    Root: {fileID: 163701541}
     BaseLodRadius: 150
     LodFalloff: 2
 --- !u!4 &163701542
@@ -672,15 +674,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1652
+      value: 381
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 49297.7
+      value: 49772.8
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 38861
+      value: 783
       objectReference: {fileID: 0}
     - target: {fileID: 400002, guid: c6453f8e1f814744d8b94e5a6d1f9942, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1099,6 +1101,7 @@ MonoBehaviour:
     SurfaceLevel: 51000
     PlanetSize: 100000
     CentreOfPlanet: {fileID: 1639349332}
+    CentreOfPlanetPosition: {x: 0, y: 0, z: 0}
     MaxLod: 10
     LodDistanceMultiplier: 0.33
     NoiseLayerSettings:
@@ -1108,6 +1111,7 @@ MonoBehaviour:
       - NoiseScale: 0.0017
         Amplitude: 10
     computeShader: {fileID: 7200000, guid: 8e76631238c9d8942b6914e61786a0e7, type: 3}
+    Root: {fileID: 1639349331}
     BaseLodRadius: 600
     LodFalloff: 1.95
 --- !u!4 &1639349332
@@ -1118,7 +1122,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1639349330}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6851, y: 0, z: 43797}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

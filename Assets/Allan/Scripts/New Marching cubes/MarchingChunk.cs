@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using System.Threading.Tasks;
+using UnityEditor;
+using UnityEngine.Rendering;
 
 public class MarchingChunk
 {
@@ -12,6 +14,7 @@ public class MarchingChunk
     private MarchingCubeContext MarchingContext;
     private Point[] Points;
     private positionBufferData[] positionDataArray;
+    public Vector3 cornerPosition;
 
     public MarchingChunk(MarchingCubeContext Context, Cube Boundary){
         MarchingContext = Context;
@@ -19,7 +22,7 @@ public class MarchingChunk
         Points = new Point[MarchingContext.AmountOfPointsPerAxis + 1 * MarchingContext.AmountOfPointsPerAxis + 1 * MarchingContext.AmountOfPointsPerAxis + 1];
 
         // Calculate and store values
-        Vector3 cornerPosition = MarchingContext.Cube.position - new Vector3(MarchingContext.Cube.size.x / 2, MarchingContext.Cube.size.y / 2, MarchingContext.Cube.size.z / 2);
+        cornerPosition = MarchingContext.Cube.position - new Vector3(MarchingContext.Cube.size.x / 2, MarchingContext.Cube.size.y / 2, MarchingContext.Cube.size.z / 2);
         Vector3 spaceBetweenPoints = MarchingContext.Cube.size / (MarchingContext.AmountOfPointsPerAxis - 1);
         int totalPoints = (MarchingContext.AmountOfPointsPerAxis + 1) *
                           (MarchingContext.AmountOfPointsPerAxis + 1) *
@@ -230,8 +233,15 @@ public class MarchingChunk
 
     }
     //Sample a value from the valuemap (This is nescecery for readability) 
+    public bool Regenerating = false;
     float SampleTerrain (Vector3Int point)
     {
+        Vector3Int adjustedPoint = new Vector3Int((int)(point.x * (MarchingContext.Cube.size.x/MarchingContext.AmountOfPointsPerAxis)), (int)(point.y * (MarchingContext.Cube.size.y/MarchingContext.AmountOfPointsPerAxis)), (int)(point.z * (MarchingContext.Cube.size.z/MarchingContext.AmountOfPointsPerAxis))) + new Vector3Int((int)cornerPosition.x + (int)MarchingContext.CentreOfPlanetPosition.x, (int)cornerPosition.y + (int)MarchingContext.CentreOfPlanetPosition.y, (int)cornerPosition.z + (int)MarchingContext.CentreOfPlanetPosition.z);
+
+        if (MarchingContext.Root.GlobalModifications.ContainsKey(adjustedPoint))
+        {
+            return MarchingContext.Root.GlobalModifications[adjustedPoint];
+        }
         return Points[GetIndexOfItemFromFlattenedArray(point.x, point.y, point.z,MarchingContext.AmountOfPointsPerAxis)].value;
     }
 
@@ -277,4 +287,5 @@ public class MarchingChunk
     {
         return new MeshData(m_vertices, m_triangles);
     }
+
 }

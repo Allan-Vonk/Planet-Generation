@@ -13,11 +13,12 @@ public struct MarchingCubeContext
     public float SurfaceLevel;
     public int PlanetSize;
     public Transform CentreOfPlanet;
+    public Vector3 CentreOfPlanetPosition;
     public int MaxLod;
     public float LodDistanceMultiplier;
     public NoiseLayerSettings NoiseLayerSettings;
     public ComputeShader computeShader;
-
+    public QuadTreeStarter Root;
     public float BaseLodRadius;
     public float LodFalloff;
 

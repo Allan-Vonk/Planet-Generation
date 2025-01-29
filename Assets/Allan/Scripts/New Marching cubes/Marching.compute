@@ -1,26 +1,117 @@
-﻿// Define a struct to match the C# struct
-struct PositionBufferData
-{
+﻿// MarchingComputeShader.compute
 
-};
-struct Point
-{
-
-};
-
-// StructuredBuffer for positionBufferData
-StructuredBuffer<PositionBufferData> InputBuffer;
-
-// RWStructuredBuffer for writing the results (the 3D float array)
-RWStructuredBuffer<Point> ResultBuffer;
 #pragma kernel CSMain
 
-[numthreads(1,1,1)] // Thread group size (adjust as necessary)
-void CSMain(uint3 id : SV_DispatchThreadID)
-{
-    // Access the struct data from the buffer (in this case, using the first element)
-    PositionBufferData data = InputBuffer[0];
+// Define buffers
+StructuredBuffer<float3> Points;
+StructuredBuffer<int> CornerIndex;
+StructuredBuffer<int> RegularCellData;
+StructuredBuffer<int> RegularVertexData;
+RWStructuredBuffer<int> Triangles;
+RWStructuredBuffer<float3> Vertices;
+RWStructuredBuffer<int> VertexCounter; // Buffer to hold the vertex counter
 
+// Define constants
+int AmountOfPointsPerAxis;
+float SurfaceLevel;
+
+// Function to sample terrain value
+float SampleTerrain(int3 point)
+{
+    int index = GetIndexOfItemFromFlattenedArray(point.x, point.y, point.z, AmountOfPointsPerAxis);
+    return Points[index].value; // Assuming Points is a structured buffer with a 'value' field
 }
 
+// Function to get configuration index
+int GetConfig(float cube[8])
+{
+    int index = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        if (cube[i] > SurfaceLevel)
+        {
+            index |= 1 << i;
+        }
+    }
+    return index;
+}
+
+// Function to calculate index in a flattened array
+int GetIndexOfItemFromFlattenedArray(int x, int y, int z, int amountOfPointsPerAxis)
+{
+    return x + (y * amountOfPointsPerAxis) + (z * amountOfPointsPerAxis * amountOfPointsPerAxis);
+}
+
+// Function to find or add a vertex and return its index
+int VertForIndice(float3 vertPosition)
+{
+    // Use atomic operation to get a unique index
+    int index = atomicAdd(VertexCounter[0], 1);
+    return index;
+}
+
+
+
+[numthreads(8, 8, 8)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // Calculate the position in the grid
+    int3 pos = int3(id.x, id.y, id.z);
+
+    // Get cube config
+    float cube[8];
+    for (int i = 0; i < 8; i++)
+    {
+        cube[i] = SampleTerrain(pos + CornerIndex[i]);
+    }
+    int index = GetConfig(cube);
+
+    // If the config is 0 or 256, return
+    if (index == 0 || index == 256)
+    {
+        return;
+    }
+
+    // Process triangles
+    for (int t = 0; t < 5; t++)
+    {
+        for (int v = 0; v < 3; v++)
+        {
+            // Get index from lookup table
+            int edgeIndex = RegularCellData[index];
+            if (edgeIndex == -1)
+            {
+                return;
+            }
+
+            // Calculate vertex positions
+            int vd1 = RegularVertexData[index] & 0x0F;
+            int vd2 = (RegularVertexData[index] >> 4) & 0x0F;
+
+            float3 vert1 = Points[GetIndexOfItemFromFlattenedArray(pos.x + CornerIndex[vd1], pos.y, pos.z, AmountOfPointsPerAxis)];
+            float3 vert2 = Points[GetIndexOfItemFromFlattenedArray(pos.x + CornerIndex[vd2], pos.y, pos.z, AmountOfPointsPerAxis)];
+
+            float vert1Sample = cube[vd1];
+            float vert2Sample = cube[vd2];
+            float differ = vert2Sample - vert1Sample;
+
+            if (differ == 0)
+            {
+                differ = SurfaceLevel;
+            }
+            else
+            {
+                differ = (SurfaceLevel - vert1Sample) / differ;
+            }
+            float3 vertPosition = vert1 + ((vert2 - vert1) * differ);
+
+            // Add vertex to the vertices buffer
+            int vertexIndex = VertForIndice(vertPosition);
+            Vertices[vertexIndex] = vertPosition;
+
+            // Add vertex index to the triangle list
+            Triangles[edgeIndex] = vertexIndex;
+        }
+    }
+}
 

@@ -95,8 +95,9 @@ public class QuadTree
             divided = false;
         }
     }
+    public bool regenerating = false;
     //Generate mesh & meshCollider
-    private async void CreateChunk ()
+    public async void CreateChunk ()
     {
 
 
@@ -106,7 +107,9 @@ public class QuadTree
         //    return new MarchingChunk(MarchingContext,Boundary);
         //});
         //Making mesh here instead of in the MarchingChunk for easier acces and because its not possible to create a new mesh on another threat
+        Root.Context.CentreOfPlanetPosition = Root.Context.CentreOfPlanet.position;
         marchingChunk = new MarchingChunk(Root.Context, RelativeBoundary);
+        marchingChunk.Regenerating = regenerating;
         await marchingChunk.Initialize(Root.Context, RelativeBoundary);
 
         MarchingChunk.MeshData meshData = marchingChunk.GetMeshData();
@@ -127,7 +130,6 @@ public class QuadTree
     //Generate a collider + Gamobject for the collider to attach to
     public void GenerateCollider ()
     {
-        Debug.Log("Generating collider " + m_IsGenerating);
         if (!ColliderObject )
         {
             ColliderObject = new GameObject();
@@ -249,4 +251,5 @@ public class QuadTree
 
         }
     }
+    
 }
